@@ -4,15 +4,11 @@ import { cn } from "@/lib/utils";
 import userStore from "@/store/user";
 import Image from "next/image";
 import Link from "next/link";
-import { redirect, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const { user } = userStore();
-
-  if (user?._id) {
-    return redirect("/");
-  }
 
   return (
     <>

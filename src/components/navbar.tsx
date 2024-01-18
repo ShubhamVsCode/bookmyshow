@@ -47,7 +47,7 @@ const Navbar = () => {
   }, []);
 
   return (
-    <header className="flex items-center h-16 px-4 border-b bg-white dark:bg-black">
+    <header className="flex items-center h-16 px-4 border-b border-slate-900 bg-white dark:bg-black">
       <Link className="flex items-center gap-2 text-lg font-semibold" href="#">
         <TextIcon className="w-6 h-6" />
         <span className="sr-only">ChatApp</span>
