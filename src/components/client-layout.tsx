@@ -63,21 +63,24 @@ const ClientLayout = ({
                           key={"seat" + seatIndex + rowIndex + sectionIndex}
                         >
                           <DropdownMenuTrigger asChild>
-                            <div
-                              className={cn(
-                                "border w-6 aspect-square rounded-sm text-sm grid place-content-center ",
-                                seat?.status === SeatStatus.BOOKED &&
-                                  "bg-gray-500 text-gray-400 border-gray-500",
-                                seat.status === SeatStatus.AVAILABLE &&
-                                  "border-green-400 text-green-500 hover:bg-green-600 hover:text-white",
-                                seat.status === SeatStatus.RESERVED &&
-                                  "border-red-500 bg-red-600 text-white",
-                                seat.status === SeatStatus.NO_SEAT &&
-                                  "border-gray-500 text-gray-500"
-                              )}
-                            >
-                              {seat?.seatNumber}
-                            </div>
+                            <button>
+                              <div
+                                className={cn(
+                                  "border w-6 aspect-square rounded-sm text-sm grid place-content-center ",
+                                  seat?.status === SeatStatus.BOOKED &&
+                                    "bg-gray-500 text-gray-400 border-gray-500",
+                                  seat.status === SeatStatus.AVAILABLE &&
+                                    "border-green-400 text-green-500 hover:bg-green-600 hover:text-white",
+                                  seat.status === SeatStatus.RESERVED &&
+                                    "border-red-500 bg-red-600 text-white",
+                                  seat.status === SeatStatus.NO_SEAT &&
+                                    "border-gray-500 text-gray-500"
+                                )}
+                              >
+                                {seat.status !== SeatStatus.NO_SEAT &&
+                                  seat?.seatNumber}
+                              </div>
+                            </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className="w-28">
                             <DropdownMenuLabel>Seat Status</DropdownMenuLabel>
@@ -122,6 +125,10 @@ const ClientLayout = ({
           </div>
         );
       })}
+
+      <div className="h-20 text-center">
+        <p>All eyes this way please</p>
+      </div>
     </div>
   );
 };

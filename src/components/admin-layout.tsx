@@ -39,10 +39,6 @@ const AdminLayout = () => {
     setSections([...sections, emptySection]);
   };
 
-  const deepEqual = (obj1: any, obj2: any): boolean => {
-    return JSON.stringify(obj1) === JSON.stringify(obj2);
-  };
-
   const removeSection = (index: number) => {
     const newSections = [...sections];
     newSections.splice(index, 1);
@@ -64,8 +60,29 @@ const AdminLayout = () => {
     removeSection(index);
   };
 
+  const deepEqual = (obj1: any, obj2: any): boolean => {
+    return JSON.stringify(obj1) === JSON.stringify(obj2);
+  };
+
   const createNewArrayWithObject = <T,>(n: number, object: T): T[] => {
     return Array.from({ length: n }, () => object);
+  };
+
+  const getRowLengthsOfPreviousSections = (
+    currentSectionIndex: number,
+    sections: TheatreSection[],
+    filterNoRow?: boolean
+  ) => {
+    let rowLengths = 0;
+
+    for (let i = 0; i < currentSectionIndex; i++) {
+      const rowLength = filterNoRow
+        ? sections[i].rows.filter((r) => r.type !== "no-row").length
+        : sections[i].rows.length;
+      rowLengths += rowLength;
+    }
+
+    return rowLengths;
   };
 
   const changeSeatStatus = (
@@ -104,23 +121,6 @@ const AdminLayout = () => {
       data.rowIndex,
       data.seatIndex
     );
-  };
-
-  const getRowLengthsOfPreviousSections = (
-    currentSectionIndex: number,
-    sections: TheatreSection[],
-    filterNoRow?: boolean
-  ) => {
-    let rowLengths = 0;
-
-    for (let i = 0; i < currentSectionIndex; i++) {
-      const rowLength = filterNoRow
-        ? sections[i].rows.filter((r) => r.type !== "no-row").length
-        : sections[i].rows.length;
-      rowLengths += rowLength;
-    }
-
-    return rowLengths;
   };
 
   const generateAlphabetSequence = (rowLength: number, isAToZ: boolean) => {
@@ -216,7 +216,10 @@ const AdminLayout = () => {
 
         <div className="flex gap-3 items-end">
           <Button onClick={handleAddSection}>Add Section</Button>
-          <Button onClick={() => handleSeatNumbering(true)}>
+          <Button
+            variant={"secondary"}
+            onClick={() => handleSeatNumbering(true)}
+          >
             Arrange Seat Numbers
           </Button>
           <div>
@@ -449,28 +452,55 @@ const AdminLayout = () => {
                                   onChange={(e) => {
                                     setSections(
                                       produce(sections, (draft) => {
+                                        const value = e.target.valueAsNumber;
+
                                         const emptySeat: Seat = {
                                           seatNumber: 0,
                                           status: SeatStatus.AVAILABLE,
                                         };
 
-                                        let newSeats = createNewArrayWithObject(
-                                          e.target.valueAsNumber,
-                                          emptySeat
-                                        );
+                                        const prevSeats =
+                                          draft[index].rows[rowIndex].rowSeats;
 
-                                        newSeats = newSeats.map(
-                                          (seat, index) => {
-                                            seat.seatNumber = index + 1;
+                                        const newSeatsLength =
+                                          value - prevSeats.length;
 
-                                            return {
-                                              ...seat,
-                                            };
-                                          }
-                                        );
+                                        if (newSeatsLength > 0) {
+                                          let newSeats =
+                                            createNewArrayWithObject(
+                                              newSeatsLength,
+                                              emptySeat
+                                            );
 
-                                        draft[index].rows[rowIndex].rowSeats =
-                                          newSeats;
+                                          newSeats = newSeats.map(
+                                            (seat, index) => {
+                                              seat.seatNumber =
+                                                prevSeats.filter(
+                                                  (s) =>
+                                                    s.status !==
+                                                    SeatStatus.NO_SEAT
+                                                ).length +
+                                                index +
+                                                1;
+
+                                              return {
+                                                ...seat,
+                                              };
+                                            }
+                                          );
+
+                                          draft[index].rows[rowIndex].rowSeats =
+                                            draft[index].rows[
+                                              rowIndex
+                                            ].rowSeats.concat(newSeats);
+                                        } else if (newSeatsLength < 0) {
+                                          draft[index].rows[
+                                            rowIndex
+                                          ].rowSeats.splice(
+                                            value,
+                                            -newSeatsLength
+                                          );
+                                        }
                                       })
                                     );
                                   }}
@@ -512,9 +542,9 @@ const AdminLayout = () => {
         <ClientLayout layout={sections} handleSeatClick={handleSeatClick} />
       </div>
 
-      <pre>
+      {/* <pre>
         <code>{JSON.stringify(sections, null, 2)}</code>
-      </pre>
+      </pre> */}
     </>
   );
 };
