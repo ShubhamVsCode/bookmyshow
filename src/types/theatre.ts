@@ -1,6 +1,13 @@
+export enum SeatStatus {
+  BOOKED = "booked",
+  AVAILABLE = "available",
+  NO_SEAT = "no-seat",
+  RESERVED = "reserved",
+}
+
 export interface Seat {
   seatNumber: number; // for no-seat seat no. is -1
-  status: "available" | "booked" | "no-seat" | "reserved";
+  status: SeatStatus;
   isSvg?: boolean;
   svg?: string;
 }

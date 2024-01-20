@@ -1,19 +1,25 @@
-import { ITheatreLayout, Row, Seat, TheatreSection } from "@/types/theatre";
+import {
+  ITheatreLayout,
+  Row,
+  Seat,
+  SeatStatus,
+  TheatreSection,
+} from "@/types/theatre";
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ArrowRight, Trash2Icon } from "lucide-react";
 import { produce } from "immer";
 import { DeleteModal } from "./DeleteModal";
-import { Switch } from "./ui/switch";
+import { Switch } from "@/components/ui/switch";
 import ClientLayout from "./client-layout";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "./ui/accordion";
+} from "@/components/ui/accordion";
 
 interface DeleteModalState {
   open: boolean;
@@ -33,9 +39,9 @@ const AdminLayout = () => {
     setSections([...sections, emptySection]);
   };
 
-  function deepEqual(obj1: any, obj2: any): boolean {
+  const deepEqual = (obj1: any, obj2: any): boolean => {
     return JSON.stringify(obj1) === JSON.stringify(obj2);
-  }
+  };
 
   const removeSection = (index: number) => {
     const newSections = [...sections];
@@ -63,16 +69,13 @@ const AdminLayout = () => {
   };
 
   const changeSeatStatus = (
+    status: SeatStatus,
     sectionIndex: number,
     rowIndex: number,
     seatIndex: number
   ) => {
     const newSections = produce(sections, (draft) => {
-      draft[sectionIndex].rows[rowIndex].rowSeats[seatIndex].status =
-        draft[sectionIndex].rows[rowIndex].rowSeats[seatIndex].status ===
-        "available"
-          ? "no-seat"
-          : "available";
+      draft[sectionIndex].rows[rowIndex].rowSeats[seatIndex].status = status;
     });
     setSections(newSections);
   };
@@ -84,6 +87,7 @@ const AdminLayout = () => {
     seatIndex: number;
     rowIndex: number;
     sectionIndex: number;
+    status: SeatStatus;
   }) => {
     const seatNumber = data.seat.seatNumber;
     const rowName = data.row.rowName;
@@ -94,17 +98,25 @@ const AdminLayout = () => {
       sectionName,
     });
 
-    changeSeatStatus(data.sectionIndex, data.rowIndex, data.seatIndex);
+    changeSeatStatus(
+      data.status,
+      data.sectionIndex,
+      data.rowIndex,
+      data.seatIndex
+    );
   };
 
   const getRowLengthsOfPreviousSections = (
     currentSectionIndex: number,
-    sections: TheatreSection[]
+    sections: TheatreSection[],
+    filterNoRow?: boolean
   ) => {
     let rowLengths = 0;
 
     for (let i = 0; i < currentSectionIndex; i++) {
-      const rowLength = sections[i].rows.length;
+      const rowLength = filterNoRow
+        ? sections[i].rows.filter((r) => r.type !== "no-row").length
+        : sections[i].rows.length;
       rowLengths += rowLength;
     }
 
@@ -138,7 +150,10 @@ const AdminLayout = () => {
   };
 
   const handleRowName = (isAToZ: boolean) => {
-    const totalRows = sections.reduce((acc, sec) => acc + sec.rows.length, 0);
+    const totalRows = sections.reduce(
+      (acc, sec) => acc + sec.rows.filter((r) => r.type !== "no-row").length,
+      0
+    );
     if (totalRows <= 0) return;
 
     const sequence = generateAlphabetSequence(totalRows, isAToZ);
@@ -148,15 +163,50 @@ const AdminLayout = () => {
         draft.forEach((section, sectionIndex) => {
           const prevRows = getRowLengthsOfPreviousSections(
             sectionIndex,
-            sections
+            sections,
+            true
           );
-          console.log(prevRows);
+
+          let noRowCount = 0;
+
           section.rows.forEach((row, rowIndex) => {
-            row.rowName = sequence[prevRows + rowIndex];
+            if (row.type === "no-row") {
+              noRowCount++;
+            } else {
+              row.rowName = sequence[prevRows - noRowCount + rowIndex];
+            }
           });
         });
       })
     );
+  };
+
+  const handleSeatNumbering = (isAcscending: boolean) => {
+    setSections((prevSections) => {
+      return produce(prevSections, (draft) => {
+        draft.forEach((section) => {
+          section.rows.forEach((row) => {
+            if (row.type !== "no-row") {
+              row.rowSeats
+                .filter((seat) => seat.status !== "no-seat")
+                .forEach((seat, seatIndex) => {
+                  if (isAcscending) {
+                    seat.seatNumber = seatIndex + 1;
+                  } else {
+                    seat.seatNumber = row.rowSeats.length - seatIndex;
+                  }
+                });
+
+              row.rowSeats
+                .filter((seat) => seat.status === "no-seat")
+                .forEach((seat) => {
+                  seat.seatNumber = -1;
+                });
+            }
+          });
+        });
+      });
+    });
   };
 
   return (
@@ -164,8 +214,41 @@ const AdminLayout = () => {
       <div>
         <h1>Admin Layout</h1>
 
-        <div>
+        <div className="flex gap-3 items-end">
           <Button onClick={handleAddSection}>Add Section</Button>
+          <Button onClick={() => handleSeatNumbering(true)}>
+            Arrange Seat Numbers
+          </Button>
+          <div>
+            <Label>Row Name</Label>
+            <div className="flex items-center gap-3">
+              <Button
+                variant={"outline"}
+                className=""
+                onClick={() => handleRowName(true)}
+              >
+                A <ArrowRight className="w-4 h-4 mx-1" /> Z
+              </Button>
+              <Button
+                variant={"outline"}
+                className=""
+                onClick={() => handleRowName(false)}
+              >
+                Z <ArrowRight className="w-4 h-4 mx-1" /> A
+              </Button>
+            </div>
+          </div>
+          <div>
+            <Label>Seats in Row</Label>
+            <Input
+              type="number"
+              min={0}
+              value={seatsInARow !== 0 ? seatsInARow : ""}
+              onChange={(e) => {
+                setSeatsInARow(e.target.valueAsNumber);
+              }}
+            />
+          </div>
         </div>
 
         <div>
@@ -194,11 +277,11 @@ const AdminLayout = () => {
                 >
                   <AccordionTrigger className="grid grid-cols-[1fr_auto_auto] gap-3">
                     <span className="text-left">
-                      Section {index + 1} {section.name && `| ${section.name}`}{" "}
+                      Section {index + 1} {section.name && `| ${section.name}`}
                       {section.pricing.IN !== 0 &&
-                        `| Rs. ${section.pricing.IN}`}
+                        ` | Rs. ${section.pricing.IN}`}
                       {section.rows.length > 0 &&
-                        `| ${section.rows.length} ${
+                        ` | ${section.rows.length} ${
                           section.rows.length > 1 ? "rows" : "row"
                         }`}
                     </span>
@@ -281,7 +364,7 @@ const AdminLayout = () => {
                                   produce(sections, (draft) => {
                                     const emptySeat: Seat = {
                                       seatNumber: 0,
-                                      status: "available",
+                                      status: SeatStatus.AVAILABLE,
                                     };
 
                                     let newSeats = createNewArrayWithObject(
@@ -328,40 +411,6 @@ const AdminLayout = () => {
                             }}
                           />
                         </div>
-                        {index === 0 && (
-                          <>
-                            <div>
-                              <Label>Automatic Row Name</Label>
-                              <div className="flex items-center gap-3">
-                                <Button
-                                  variant={"outline"}
-                                  className=""
-                                  onClick={() => handleRowName(true)}
-                                >
-                                  A <ArrowRight className="w-4 h-4 mx-1" /> Z
-                                </Button>
-                                <Button
-                                  variant={"outline"}
-                                  className=""
-                                  onClick={() => handleRowName(false)}
-                                >
-                                  Z <ArrowRight className="w-4 h-4 mx-1" /> A
-                                </Button>
-                              </div>
-                            </div>
-                            <div>
-                              <Label>Seats in Row</Label>
-                              <Input
-                                type="number"
-                                min={0}
-                                value={seatsInARow !== 0 ? seatsInARow : ""}
-                                onChange={(e) => {
-                                  setSeatsInARow(e.target.valueAsNumber);
-                                }}
-                              />
-                            </div>
-                          </>
-                        )}
                       </div>
 
                       <div>
@@ -402,7 +451,7 @@ const AdminLayout = () => {
                                       produce(sections, (draft) => {
                                         const emptySeat: Seat = {
                                           seatNumber: 0,
-                                          status: "available",
+                                          status: SeatStatus.AVAILABLE,
                                         };
 
                                         let newSeats = createNewArrayWithObject(
