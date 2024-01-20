@@ -97,36 +97,66 @@ const AdminLayout = () => {
     changeSeatStatus(data.sectionIndex, data.rowIndex, data.seatIndex);
   };
 
+  const getRowLengthsOfPreviousSections = (
+    currentSectionIndex: number,
+    sections: TheatreSection[]
+  ) => {
+    let rowLengths = 0;
+
+    for (let i = 0; i < currentSectionIndex; i++) {
+      const rowLength = sections[i].rows.length;
+      rowLengths += rowLength;
+    }
+
+    return rowLengths;
+  };
+
+  const generateAlphabetSequence = (rowLength: number, isAToZ: boolean) => {
+    const startChar = isAToZ
+      ? "A"
+      : String.fromCharCode("A".charCodeAt(0) + rowLength - 1);
+    const endChar = isAToZ
+      ? String.fromCharCode("A".charCodeAt(0) + rowLength - 1)
+      : "A";
+
+    const sequence = [];
+    let currentChar = startChar;
+
+    while (currentChar !== endChar) {
+      sequence.push(currentChar);
+
+      if (isAToZ) {
+        currentChar = String.fromCharCode(currentChar.charCodeAt(0) + 1);
+      } else {
+        currentChar = String.fromCharCode(currentChar.charCodeAt(0) - 1);
+      }
+    }
+
+    sequence.push(endChar);
+
+    return sequence;
+  };
+
   const handleRowName = (isAToZ: boolean) => {
-    const newSections = produce(sections, (draft) => {
-      const totalRowCount = draft.reduce(
-        (acc, section) => acc + section.rows.length,
-        0
-      );
+    const totalRows = sections.reduce((acc, sec) => acc + sec.rows.length, 0);
+    if (totalRows <= 0) return;
 
-      // We need previous section row length so for the first section the length of previous section is 0
-      const sectionsRowLength = [
-        0,
-        ...draft.map((section) => section.rows.length),
-      ];
+    const sequence = generateAlphabetSequence(totalRows, isAToZ);
 
-      const startingCharCode = "A".charCodeAt(0) + totalRowCount - 1;
-
-      draft.forEach((section, sectionIndex) => {
-        section.rows.forEach((row, index) => {
-          if (isAToZ) {
-            row.rowName = String.fromCharCode(
-              65 + ((sectionsRowLength[sectionIndex] + index) % 26)
-            );
-          } else {
-            row.rowName = String.fromCharCode(
-              startingCharCode - sectionsRowLength[sectionIndex] - index
-            );
-          }
+    setSections(
+      produce(sections, (draft) => {
+        draft.forEach((section, sectionIndex) => {
+          const prevRows = getRowLengthsOfPreviousSections(
+            sectionIndex,
+            sections
+          );
+          console.log(prevRows);
+          section.rows.forEach((row, rowIndex) => {
+            row.rowName = sequence[prevRows + rowIndex];
+          });
         });
-      });
-    });
-    setSections(newSections);
+      })
+    );
   };
 
   return (
@@ -167,6 +197,10 @@ const AdminLayout = () => {
                       Section {index + 1} {section.name && `| ${section.name}`}{" "}
                       {section.pricing.IN !== 0 &&
                         `| Rs. ${section.pricing.IN}`}
+                      {section.rows.length > 0 &&
+                        `| ${section.rows.length} ${
+                          section.rows.length > 1 ? "rows" : "row"
+                        }`}
                     </span>
                     <Button
                       variant={"destructive"}
@@ -428,10 +462,10 @@ const AdminLayout = () => {
       <div>
         <ClientLayout layout={sections} handleSeatClick={handleSeatClick} />
       </div>
-      {/* 
+
       <pre>
         <code>{JSON.stringify(sections, null, 2)}</code>
-      </pre> */}
+      </pre>
     </>
   );
 };

@@ -19,8 +19,8 @@ const ClientLayout = ({
     <div>
       {layout.map((section, sectionIndex) => {
         return (
-          <div key={sectionIndex}>
-            <div>
+          <div key={sectionIndex} className="mb-3">
+            <div className="mb-2">
               {section.name} Rs.{section.pricing.IN}
             </div>
             <div className="grid gap-2">
