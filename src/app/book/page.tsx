@@ -20,7 +20,7 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="grid grid-cols-2 my-10 mx-20">
+    <div className="grid grid-cols-[1fr_1fr] my-10 mx-20">
       {/* <ClientLayout layout={layout} handleSeatClick={handleSeatClick} /> */}
       <AdminLayout />
     </div>
