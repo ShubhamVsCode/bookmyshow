@@ -6,17 +6,7 @@ import {
   SeatStatus,
   TheatreSection,
 } from "@/types/theatre";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import SelectionArea, { SelectionEvent } from "@viselect/react";
-import { useState } from "react";
 
 const ClientLayout = ({
   layout,
@@ -53,15 +43,11 @@ const ClientLayout = ({
   const onMove = ({
     store: {
       changed: { added, removed },
-      touched,
     },
   }: SelectionEvent) => {
-    // console.log("Moving...");
-    setSelected((prev: string) => {
-      // console.log({ prev, added, removed });
-      const next = new Set(prev);
-      const id = extractIds(added);
-      // console.log("id", id);
+    // @ts-ignore
+    setSelected((prev: Set<string>) => {
+      const next = new Set<string>(prev);
       extractIds(added).forEach((id) => next.add(id));
       extractIds(removed).forEach((id) => next.delete(id));
       return next;
@@ -159,55 +145,3 @@ const ClientLayout = ({
 };
 
 export default ClientLayout;
-
-{
-  /* <DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <button>
-      <div
-        className={cn(
-          "border w-6 aspect-square rounded-sm text-sm grid place-content-center ",
-          seat?.status === SeatStatus.BOOKED &&
-            "bg-gray-500 text-gray-400 border-gray-500",
-          seat.status === SeatStatus.AVAILABLE &&
-            "border-green-400 text-green-500 hover:bg-green-600 hover:text-white",
-          seat.status === SeatStatus.RESERVED &&
-            "border-red-500 bg-red-600 text-white",
-          seat.status === SeatStatus.NO_SEAT && "border-gray-500 text-gray-500"
-        )}
-      >
-        {seat.status !== SeatStatus.NO_SEAT && seat?.seatNumber}
-      </div>
-    </button>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent className="w-28">
-    <DropdownMenuLabel>Seat Status</DropdownMenuLabel>
-    <DropdownMenuSeparator />
-    <DropdownMenuRadioGroup
-      value={seat.status}
-      onValueChange={(value) => {
-        handleSeatClick &&
-          handleSeatClick({
-            seat,
-            row,
-            section,
-            seatIndex: seatIndex,
-            rowIndex: rowIndex,
-            sectionIndex: sectionIndex,
-            status: value as SeatStatus,
-          });
-      }}
-    >
-      <DropdownMenuRadioItem value={SeatStatus.AVAILABLE}>
-        Available
-      </DropdownMenuRadioItem>
-      <DropdownMenuRadioItem value={SeatStatus.RESERVED}>
-        Reserved
-      </DropdownMenuRadioItem>
-      <DropdownMenuRadioItem value={SeatStatus.NO_SEAT}>
-        No Seat
-      </DropdownMenuRadioItem>
-    </DropdownMenuRadioGroup>
-  </DropdownMenuContent>
-</DropdownMenu>; */
-}
