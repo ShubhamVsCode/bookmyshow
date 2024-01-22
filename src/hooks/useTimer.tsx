@@ -20,7 +20,7 @@ const useTimer = ({
   }, [initialSeconds]);
 
   useEffect(() => {
-    let intervalId: NodeJS.Timer;
+    let intervalId: NodeJS.Timeout;
 
     if (isActive && seconds > 0) {
       intervalId = setInterval(() => {
